@@ -1,4 +1,5 @@
-﻿using Minio;
+﻿using MiniClientApp;
+using Minio;
 using Minio.DataModel;
 using Minio.DataModel.Args;
 using Minio.DataModel.Encryption;
@@ -23,35 +24,7 @@ namespace MinioClientApp
         {
             try
             {
-                IMinioClient client = new MinioClient()
-                    .WithEndpoint(endpoint)
-                    .WithCredentials(accessKey, secretKey)
-                    .WithTimeout(5)
-                    .WithSSL(false)
-                    //.WithSessionToken()
-                    .Build();
-
-                ////существует ли корзина
-                //var isExists = await IsBucketExistsAsync(client);
-                //if (!isExists)
-                //{
-                //    //создаем корзину
-                //    await CreateBacketAsync(client);
-                //}
-                //else
-                //{
-                //    Console.WriteLine($"Bucket is exists {bucketName}");
-                //}
-
-                ////получаем список корзин
-                //await GetListBucket(client);
-
-                // загружаем данные 
-                // await UploadDataToBasketAsync(client);
-
-                //await GetObjectListAsync(client);
-                
-                await GetObjectFromBusketAsync(client);
+                IMinioClient client = ClientFactory.GetClient();
             }
             catch (Exception ex)
             {
@@ -157,7 +130,7 @@ namespace MinioClientApp
                 Console.WriteLine(e.Message);
             }
         }
-        static async Task GetObjectFromBusketAsync(IMinioClient minio)
+        static async Task DownloadObjectFromBusketAsync(IMinioClient minio)
         {
             // return stream because we write object as stream not as file
             
@@ -192,6 +165,8 @@ namespace MinioClientApp
         }
         #endregion
         #region Up/Down load 
+
+        #endregion
         static async Task GetObjectListAsync(IMinioClient minio)
         {
             try
