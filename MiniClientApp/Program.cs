@@ -4,6 +4,7 @@ using Minio.DataModel;
 using Minio.DataModel.Args;
 using Minio.DataModel.Encryption;
 using Minio.DataModel.Tags;
+using Minio.Exceptions;
 using System;
 using System.IO;
 using System.Runtime.Intrinsics.X86;
@@ -16,8 +17,8 @@ namespace MinioClientApp
     internal class Program
     {
         //static string endpoint = "localhost:9000";  // Используем 127.0.0.1, так как localhost может не работать правильно в Docker
-        //static string accessKey = "admin";
-        //static string secretKey = "admin123";
+        static string accessKey = "admin";
+        static string secretKey = "admin123";
         static string folder = @"C:\Users\Orkhan\Desktop\TestContainers";
         static string bucketName = "mydemo";
         static string fileName = "test.txt";
@@ -25,16 +26,40 @@ namespace MinioClientApp
         static string path = Path.Combine(Directory.GetCurrentDirectory(), fileName);
         static string dpath = Path.Combine(folder, downloadedFileName);
 
+        static async Task EnableVersionAsync(IMinioClient minio)
+        {
+            try
+            {
+                var bargs = new BucketExistsArgs().WithBucket(bucketName);
+                var isExist = await minio.BucketExistsAsync(bargs);
+                
+                if (isExist)
+                {
+                    Console.WriteLine($"Корзина {bucketName}  найдена ");
+                    var varg = new SetVersioningArgs()
+                        .WithVersioningEnabled()
+                        .WithBucket(bucketName);
+                    await minio.SetVersioningAsync(varg);
+                }
+                else
+                {
+                    Console.WriteLine("Создай корзину");
+                }
+            }
+            catch (MinioException e)
+            {
+                Console.WriteLine("Error occurred: " + e);
+            }
 
+        }
 
         static async Task Main(string[] args)
         {
             try
             {
                 IMinioClient client = ClientFactory.GetClient();
-                
-
-
+                await EnableVersionAsync(client);
+              
             }
             catch (Exception ex)
             {
@@ -321,16 +346,17 @@ namespace MinioClientApp
                 Console.WriteLine(e.Message);
             }
         }
-        // ...
-
-        static public async Task UploadObjectWithStreamAndTags(IMinioClient minio)
+        #endregion
+        #region Tags Up/Down load
+        static public async Task UploadObjectWithStreamAndTags(IMinioClient minio,string version)
         {
             try
             {
                 var text = GenerateLoremIpsumText(100);
                 Dictionary<string, string> tagsDict = new Dictionary<string, string>
             {
-                { "version", "1.0" },
+
+                { "version",  version },// example version--> 1.0 
                 { "content-type", "text/plain" },
                 { "timestamp", DateTime.UtcNow.ToString() }
             };
