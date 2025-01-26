@@ -1,17 +1,14 @@
 ﻿using MiniClientApp;
 using Minio;
-using Minio.DataModel;
 using Minio.DataModel.Args;
-using Minio.DataModel.Encryption;
 using Minio.DataModel.Tags;
 using Minio.Exceptions;
-using System;
-using System.IO;
-using System.Runtime.Intrinsics.X86;
 using System.Text;
 
 namespace MinioClientApp
 {
+    // examples of code
+    // https://min.io/docs/minio/linux/developers/dotnet/API.html
     internal class Program
     {
         //static string endpoint = "localhost:9000";  // Используем 127.0.0.1, так как localhost может не работать правильно в Docker
