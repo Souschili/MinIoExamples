@@ -14,10 +14,11 @@ namespace MinioClientApp
 {
     internal class Program
     {
-        static string endpoint = "localhost:9000";  // Используем 127.0.0.1, так как localhost может не работать правильно в Docker
-        static string accessKey = "admin";
-        static string secretKey = "admin123";
+        //static string endpoint = "localhost:9000";  // Используем 127.0.0.1, так как localhost может не работать правильно в Docker
+        //static string accessKey = "admin";
+        //static string secretKey = "admin123";
         static string bucketName = "mydemo";
+        static string fileName = "test.txt";
 
 
         static async Task Main(string[] args)
@@ -25,6 +26,7 @@ namespace MinioClientApp
             try
             {
                 IMinioClient client = ClientFactory.GetClient();
+                await CreateFile();
             }
             catch (Exception ex)
             {
@@ -133,38 +135,77 @@ namespace MinioClientApp
         static async Task DownloadObjectFromBusketAsync(IMinioClient minio)
         {
             // return stream because we write object as stream not as file
-            
-                try
-                {
-                    Console.WriteLine("Running example for API: GetObjectAsync");
 
-                    using var memoryStream = new MemoryStream();
+            try
+            {
+                Console.WriteLine("Running example for API: GetObjectAsync");
 
-                    var args = new GetObjectArgs()
-                        .WithBucket(bucketName) // Указывает корзину
-                        .WithObject("document/demo") // Указывает ключ объекта
-                        //.WithFile("demo") // если мы записали объект как массив байтов то поле необязательно
-                        .WithCallbackStream((stream) => stream.CopyTo(memoryStream)); // Копируем данные объекта в поток
+                using var memoryStream = new MemoryStream();
 
-                    // Выполняем запрос на получение объекта
-                   var r= await minio.GetObjectAsync(args).ConfigureAwait(false);
+                var args = new GetObjectArgs()
+                    .WithBucket(bucketName) // Указывает корзину
+                    .WithObject("document/demo") // Указывает ключ объекта
+                                                 //.WithFile("demo") // если мы записали объект как массив байтов то поле необязательно
+                    .WithCallbackStream((stream) => stream.CopyTo(memoryStream)); // Копируем данные объекта в поток
 
-                    // Устанавливаем позицию потока в начало для чтения
-                    memoryStream.Position = 0;
+                // Выполняем запрос на получение объекта
+                var r = await minio.GetObjectAsync(args).ConfigureAwait(false);
 
-                    // Читаем текстовые данные
-                    using var reader = new StreamReader(memoryStream);
-                    var content = await reader.ReadToEndAsync();
+                // Устанавливаем позицию потока в начало для чтения
+                memoryStream.Position = 0;
 
-                    Console.WriteLine($"Object content: {content}");
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine($"Error while getting object: {e.Message}");
-                }
+                // Читаем текстовые данные
+                using var reader = new StreamReader(memoryStream);
+                var content = await reader.ReadToEndAsync();
+
+                Console.WriteLine($"Object content: {content}");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Error while getting object: {e.Message}");
+            }
         }
         #endregion
         #region Up/Down load 
+        static string GenerateLoremIpsumText(int wordCount)
+        {
+            var words = new[]
+            {
+                "lorem", "ipsum", "dolor", "sit", "amet", "consectetur",
+                "adipiscing", "elit", "sed", "do", "eiusmod", "tempor",
+                "incididunt", "ut", "labore", "et", "dolore", "magna", "aliqua"
+            };
+
+            var random = new Random();
+            return string.Join(" ", Enumerable.Range(0, wordCount)
+                                  .Select(_ => words[random.Next(words.Length)]));
+        }
+        static async Task CreateFile()
+        {
+            try
+            {
+                string text = GenerateLoremIpsumText(100);
+                string path = Path.Combine(Directory.GetCurrentDirectory(), fileName);
+                if (File.Exists(path))
+                {
+                    await File.AppendAllTextAsync(path, "This is added because file exists");
+                    Console.WriteLine($"File with name {fileName} is exist");
+                    return;
+
+                }
+                await File.WriteAllTextAsync(path, text);
+                var message = GenerateLoremIpsumText(100);
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+        }
+        static void DeleteFile()
+        {
+
+        }
 
         #endregion
         static async Task GetObjectListAsync(IMinioClient minio)
@@ -178,7 +219,7 @@ namespace MinioClientApp
                     .WithRecursive(true)              // Получить объекты во всех подкаталогах
                     .WithVersions(false)              // Не учитывать версии объектов
                     .WithIncludeUserMetadata(false);  // Не включать пользовательские метаданные
-             
+
 
 
                 await foreach (var item in minio.ListObjectsEnumAsync(listArgs).ConfigureAwait(false))
