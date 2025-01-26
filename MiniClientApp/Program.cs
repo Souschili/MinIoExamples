@@ -3,6 +3,7 @@ using Minio;
 using Minio.DataModel;
 using Minio.DataModel.Args;
 using Minio.DataModel.Encryption;
+using Minio.DataModel.Tags;
 using System;
 using System.IO;
 using System.Runtime.Intrinsics.X86;
@@ -31,7 +32,7 @@ namespace MinioClientApp
             try
             {
                 IMinioClient client = ClientFactory.GetClient();
-                await PutFileInBucketWithStreamAsync(client);
+                
 
 
             }
@@ -320,6 +321,38 @@ namespace MinioClientApp
                 Console.WriteLine(e.Message);
             }
         }
+        // ...
+
+        static public async Task UploadObjectWithStreamAndTags(IMinioClient minio)
+        {
+            try
+            {
+                var text = GenerateLoremIpsumText(100);
+                Dictionary<string, string> tagsDict = new Dictionary<string, string>
+            {
+                { "version", "1.0" },
+                { "content-type", "text/plain" },
+                { "timestamp", DateTime.UtcNow.ToString() }
+            };
+
+                var tags = new Tagging(tagsDict, true);
+
+                using MemoryStream msream = new MemoryStream(Encoding.UTF8.GetBytes(text));
+                var args = new PutObjectArgs()
+                    .WithBucket(bucketName)
+                    .WithObject($"files/{fileName}")
+                    .WithStreamData(msream)
+                    .WithObjectSize(msream.Length)
+                    .WithContentType("text/plain")
+                    .WithTagging(tags);
+
+                await minio.PutObjectAsync(args);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+        }
         #endregion
         static async Task GetObjectListAsync(IMinioClient minio)
         {
@@ -345,5 +378,6 @@ namespace MinioClientApp
                 Console.WriteLine(e.Message);
             }
         }
+
     }
 }
