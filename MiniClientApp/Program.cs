@@ -22,7 +22,7 @@ namespace MinioClientApp
         static string fileName = "test.txt";
         static string downloadedFileName = "server-text.txt";
         static string path = Path.Combine(Directory.GetCurrentDirectory(), fileName);
-        static string dpath = Path.Combine(folder,downloadedFileName);
+        static string dpath = Path.Combine(folder, downloadedFileName);
 
 
 
@@ -31,8 +31,9 @@ namespace MinioClientApp
             try
             {
                 IMinioClient client = ClientFactory.GetClient();
-                //await PutFileInBucketAsync(client);
-                await GetFileFromBucketAsync(client);
+                await PutFileInBucketWithStreamAsync(client);
+
+
             }
             catch (Exception ex)
             {
@@ -242,9 +243,9 @@ namespace MinioClientApp
                 Console.WriteLine($"Uploaded object {fileName} to bucket {bucketName}");
                 Console.WriteLine();
             }
-            catch (Exception e) 
-            { 
-                Console.WriteLine(e.Message); 
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
             }
         }
         static async Task GetFileFromBucketAsync(IMinioClient minio)
@@ -259,13 +260,62 @@ namespace MinioClientApp
                     .WithBucket(bucketName)
                     .WithObject($"files/{fileName}")
                     .WithFile(dpath);
-                    
-                
 
                 var f = await minio.GetObjectAsync(args);
                 Console.WriteLine($"Downloaded the file {fileName} from bucket {bucketName}");
                 Console.WriteLine();
-            } catch (Exception e)
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+        }
+        static async Task GetFileFromBucketWithStreamAsync(IMinioClient minio)
+        {
+            try
+            {
+
+                if (minio == null)
+                    throw new ArgumentNullException("Client is null");
+                using var mstream = new MemoryStream();
+                var args = new GetObjectArgs()
+                    .WithBucket(bucketName)
+                    .WithObject($"files/{fileName}")
+                    .WithCallbackStream(async (stream) => { await stream.CopyToAsync(mstream); });
+
+                var f = await minio.GetObjectAsync(args);
+
+                mstream.Position = 0;
+
+                using StreamReader rstream = new StreamReader(mstream);
+                var content = await rstream.ReadToEndAsync();
+                Console.WriteLine($"Downloaded the file {fileName} from bucket {bucketName}");
+                Console.WriteLine();
+                Console.WriteLine($"Object content: {content}");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+        }
+        static async Task PutFileInBucketWithStreamAsync(IMinioClient minio)
+        {
+            try
+            {
+                var text = Encoding.UTF8.GetBytes(GenerateLoremIpsumText(100));
+                using var mstream = new MemoryStream(text);
+                var putArg = new PutObjectArgs()
+                    .WithBucket(bucketName)
+                    .WithObject($"files/{fileName}")
+                    .WithStreamData(mstream)
+                    .WithObjectSize(mstream.Length)
+                    .WithContentType("text/plain");
+                _ = await minio.PutObjectAsync(putArg);
+
+                Console.WriteLine($"Uploaded object {fileName} to bucket {bucketName}");
+                Console.WriteLine();
+            }
+            catch (Exception e)
             {
                 Console.WriteLine(e.Message);
             }
