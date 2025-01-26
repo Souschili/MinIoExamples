@@ -19,6 +19,7 @@ namespace MinioClientApp
         //static string secretKey = "admin123";
         static string bucketName = "mydemo";
         static string fileName = "test.txt";
+        static string path = Path.Combine(Directory.GetCurrentDirectory(), fileName);
 
 
         static async Task Main(string[] args)
@@ -27,6 +28,7 @@ namespace MinioClientApp
             {
                 IMinioClient client = ClientFactory.GetClient();
                 await CreateFile();
+                Console.WriteLine(await GetContent());
             }
             catch (Exception ex)
             {
@@ -185,7 +187,7 @@ namespace MinioClientApp
             try
             {
                 string text = GenerateLoremIpsumText(100);
-                string path = Path.Combine(Directory.GetCurrentDirectory(), fileName);
+
                 if (File.Exists(path))
                 {
                     await File.AppendAllTextAsync(path, "This is added because file exists");
@@ -202,9 +204,23 @@ namespace MinioClientApp
                 Console.WriteLine(e.Message);
             }
         }
+        static async Task<string> GetContent()
+        {
+            if (File.Exists(path))
+            {
+                var text = await File.ReadAllTextAsync(path);
+                return text;
+            }
+            else
+            {
+                return string.Empty;
+            }
+        }
         static void DeleteFile()
         {
 
+            if (File.Exists(path))
+                File.Delete(path);
         }
 
         #endregion
