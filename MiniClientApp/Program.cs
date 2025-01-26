@@ -17,8 +17,8 @@ namespace MinioClientApp
     internal class Program
     {
         //static string endpoint = "localhost:9000";  // Используем 127.0.0.1, так как localhost может не работать правильно в Docker
-        static string accessKey = "admin";
-        static string secretKey = "admin123";
+        //static string accessKey = "admin";
+        //static string secretKey = "admin123";
         static string folder = @"C:\Users\Orkhan\Desktop\TestContainers";
         static string bucketName = "mydemo";
         static string fileName = "test.txt";
@@ -26,7 +26,7 @@ namespace MinioClientApp
         static string path = Path.Combine(Directory.GetCurrentDirectory(), fileName);
         static string dpath = Path.Combine(folder, downloadedFileName);
 
-        static async Task EnableVersionAsync(IMinioClient minio)
+        static async Task EnableVersionAsync(IMinioClient minio,string bucketName)
         {
             try
             {
@@ -52,14 +52,38 @@ namespace MinioClientApp
             }
 
         }
+        static async Task DisableVersionAsync(IMinioClient minio, string bucketName)
+        {
+            try
+            {
+                var bargs = new BucketExistsArgs().WithBucket(bucketName);
+                var isExist = await minio.BucketExistsAsync(bargs);
 
+                if (isExist)
+                {
+                    Console.WriteLine($"Корзина {bucketName}  найдена ");
+                    var varg = new SetVersioningArgs()
+                        .WithVersioningEnabled()
+                        .WithBucket(bucketName);
+                    await minio.SetVersioningAsync(varg);
+                }
+                else
+                {
+                    Console.WriteLine("Создай корзину");
+                }
+            }
+            catch (MinioException e)
+            {
+                Console.WriteLine("Error occurred: " + e);
+            }
+        }
         static async Task Main(string[] args)
         {
             try
             {
                 IMinioClient client = ClientFactory.GetClient();
-                await EnableVersionAsync(client);
-              
+                //await EnableVersionAsync(client,bucketName);
+            
             }
             catch (Exception ex)
             {
