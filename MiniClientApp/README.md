@@ -1,9 +1,8 @@
 ﻿### About
 
-The project demonstrates working with the MinIO client file storage. 
-The examples are taken from the official documentation, with some additional 
-modifications that are not included in the examples provided for developers. 
-Docker containers were used for testing.
+This project is intended to demonstrate working with the MinIO client file storage in a local environment for private use. The examples are taken from the official documentation, with some additional modifications that are not included in the examples provided for developers. Docker containers were used for testing.
+
+Note: This project is for demonstration purposes only. For use in production environments, it is recommended to replace passwords and other parameters with more secure ones.
 
 ## How to start Docker
 
@@ -18,3 +17,7 @@ docker run -p 9000:9000 -p 9001:9001 --name minio -e "MINIO_ROOT_USER=admin" -e 
 -e "MINIO_ROOT_PASSWORD=strongpassword": Sets the root password (replace "strongpassword" with a more secure one).
 -v /data:/data: Mounts the local /data directory for data storage.
 -v /config:/root/.minio: Mounts the directory for configuration files.
+
+## Important
+
+This project can be modified to suit your own needs for local work with MinIO.
