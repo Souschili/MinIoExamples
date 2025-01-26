@@ -17,9 +17,13 @@ namespace MinioClientApp
         //static string endpoint = "localhost:9000";  // Используем 127.0.0.1, так как localhost может не работать правильно в Docker
         //static string accessKey = "admin";
         //static string secretKey = "admin123";
+        static string folder = @"C:\Users\Orkhan\Desktop\TestContainers";
         static string bucketName = "mydemo";
         static string fileName = "test.txt";
+        static string downloadedFileName = "server-text.txt";
         static string path = Path.Combine(Directory.GetCurrentDirectory(), fileName);
+        static string dpath = Path.Combine(folder,downloadedFileName);
+
 
 
         static async Task Main(string[] args)
@@ -27,8 +31,8 @@ namespace MinioClientApp
             try
             {
                 IMinioClient client = ClientFactory.GetClient();
-                await CreateFile();
-                Console.WriteLine(await GetContent());
+                //await PutFileInBucketAsync(client);
+                await GetFileFromBucketAsync(client);
             }
             catch (Exception ex)
             {
@@ -222,7 +226,50 @@ namespace MinioClientApp
             if (File.Exists(path))
                 File.Delete(path);
         }
+        static async Task PutFileInBucketAsync(IMinioClient minio)
+        {
+            try
+            {
+                if (!File.Exists(path))
+                    throw new Exception("No any file to put");
+                var putArg = new PutObjectArgs()
+                    .WithBucket(bucketName)
+                    .WithObject($"files/{fileName}")
+                    .WithFileName(path)
+                    .WithContentType("text/plain");
+                _ = await minio.PutObjectAsync(putArg);
 
+                Console.WriteLine($"Uploaded object {fileName} to bucket {bucketName}");
+                Console.WriteLine();
+            }
+            catch (Exception e) 
+            { 
+                Console.WriteLine(e.Message); 
+            }
+        }
+        static async Task GetFileFromBucketAsync(IMinioClient minio)
+        {
+            try
+            {
+
+
+                if (minio == null)
+                    throw new ArgumentNullException("Client is null");
+                var args = new GetObjectArgs()
+                    .WithBucket(bucketName)
+                    .WithObject($"files/{fileName}")
+                    .WithFile(dpath);
+                    
+                
+
+                var f = await minio.GetObjectAsync(args);
+                Console.WriteLine($"Downloaded the file {fileName} from bucket {bucketName}");
+                Console.WriteLine();
+            } catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+        }
         #endregion
         static async Task GetObjectListAsync(IMinioClient minio)
         {
