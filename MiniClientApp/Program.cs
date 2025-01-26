@@ -8,9 +8,7 @@ using Minio.Exceptions;
 using System;
 using System.IO;
 using System.Runtime.Intrinsics.X86;
-using System.Security.AccessControl;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace MinioClientApp
 {
@@ -82,7 +80,7 @@ namespace MinioClientApp
             try
             {
                 IMinioClient client = ClientFactory.GetClient();
-                //await EnableVersionAsync(client,bucketName);
+                await EnableVersionAsync(client,bucketName);
             
             }
             catch (Exception ex)
