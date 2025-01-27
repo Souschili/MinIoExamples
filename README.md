@@ -10,6 +10,10 @@ To run the test container in Docker, you need to enter the following command in 
 ```
 docker run -p 9000:9000 -p 9001:9001 --name minio -e "MINIO_ROOT_USER=admin" -e "MINIO_ROOT_PASSWORD=strongpassword" -v /data:/data -v /config:/root/.minio quay.io/minio/minio server /data --console-address ":9001"
 ```
+```
+docker run -p 9000:9000 -p 9001:9001 --name minio1 -v D:\minio\data:/data -e "MINIO_ROOT_USER=admin" -e "MINIO_ROOT_PASSWORD=admin123" quay.io/minio/minio server /data --console-address ":9001"
+
+```
 -p 9000:9000: Opens port 9000 for access to the S3 API.
 
 -p 9001:9001: Opens port 9001 for the MinIO web console.
