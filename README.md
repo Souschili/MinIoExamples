@@ -8,25 +8,26 @@ Note: This project is for demonstration purposes only. For use in production env
 
 To run the test container in Docker, you need to enter the following command in the terminal:
 ```
-docker run -p 9000:9000 -p 9001:9001 --name minio -e "MINIO_ROOT_USER=admin" -e "MINIO_ROOT_PASSWORD=strongpassword" -v /data:/data -v /config:/root/.minio quay.io/minio/minio server /data --console-address ":9001"
+docker run -p 9000:9000 -p 9001:9001 --name minio1 -v C:\minio\data:/data -e "MINIO_ROOT_USER=admin" -e "MINIO_ROOT_PASSWORD=admin123" quay.io/minio/minio server /data --console-address ":9001"
 ```
-```
-docker run -p 9000:9000 -p 9001:9001 --name minio1 -v D:\minio\data:/data -e "MINIO_ROOT_USER=admin" -e "MINIO_ROOT_PASSWORD=admin123" quay.io/minio/minio server /data --console-address ":9001"
+-p 9000:9000: Maps MinIO's default service port to the host.
 
-```
--p 9000:9000: Opens port 9000 for access to the S3 API.
+-p 9001:9001: Maps MinIO's console port to the host.
 
--p 9001:9001: Opens port 9001 for the MinIO web console.
+--name minio1: Names the container minio1.
 
---name minio: Sets the name of the container.
+-v C:\minio\data:/data: Mounts the C:\minio\data directory from the host system as the /data directory in the container.
 
--e "MINIO_ROOT_USER=admin": Sets the root user (you can replace "admin" with your own).
+-e "MINIO_ROOT_USER=admin": Sets the root username for MinIO to admin.
 
--e "MINIO_ROOT_PASSWORD=strongpassword": Sets the root password (replace "strongpassword" with a more secure one).
+-e "MINIO_ROOT_PASSWORD=admin123": Sets the root password for MinIO to admin123.
 
--v /data:/data: Mounts the local /data directory for data storage.
+quay.io/minio/minio: Specifies the MinIO Docker image to use.
 
--v /config:/root/.minio: Mounts the directory for configuration files.
+server /data: Indicates that MinIO will use /data as its storage directory.
+
+--console-address ":9001": Sets the MinIO console to listen on port 9001.
+## for alternative config
 
 ## Important
 
