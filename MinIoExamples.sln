@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiniClientApp", "MiniClient
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiniioTests", "MiniioTests\MiniioTests.csproj", "{9802CF50-8747-48EE-A2B0-1B35464BFF4B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinioNotificationToRabbitMqApp", "MinioNotificationToRabbitMqApp\MinioNotificationToRabbitMqApp.csproj", "{FA3D0D7D-6705-480C-A3E6-3D18A66AD470}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{9802CF50-8747-48EE-A2B0-1B35464BFF4B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9802CF50-8747-48EE-A2B0-1B35464BFF4B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9802CF50-8747-48EE-A2B0-1B35464BFF4B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FA3D0D7D-6705-480C-A3E6-3D18A66AD470}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA3D0D7D-6705-480C-A3E6-3D18A66AD470}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA3D0D7D-6705-480C-A3E6-3D18A66AD470}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA3D0D7D-6705-480C-A3E6-3D18A66AD470}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
