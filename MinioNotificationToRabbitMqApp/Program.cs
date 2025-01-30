@@ -1,10 +1,30 @@
-﻿namespace MinioNotificationToRabbitMqApp
+﻿using Minio;
+using Minio.DataModel.Args;
+using MinioNotificationToRabbitMqApp.Factory;
+
+namespace MinioNotificationToRabbitMqApp
 {
     internal class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
-            Console.WriteLine("Hello, World!");
+            try
+            {
+                IMinioClient client=ClientFactory.GetClient();
+                var request = new MakeBucketArgs()
+                    .WithBucket("demo");
+                await client.MakeBucketAsync(request);
+                
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+            
+
+
+
+           
         }
     }
 }

@@ -2,7 +2,7 @@
 
 namespace MinioNotificationToRabbitMqApp.Factory
 {
-    internal class MinioClientFactory
+    internal class ClientFactory
     {
         static string endpoint = "localhost:9000";  // Используем 127.0.0.1, так как localhost может не работать правильно в Docker
         static string accessKey = "admin";
