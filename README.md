@@ -27,7 +27,12 @@ quay.io/minio/minio: Specifies the MinIO Docker image to use.
 server /data: Indicates that MinIO will use /data as its storage directory.
 
 --console-address ":9001": Sets the MinIO console to listen on port 9001.
-## for alternative config
+## Enable AMPQ
+```
+docker run --name minio-server -p 9000:9000 -p 9090:9090 -e MINIO_ROOT_USER="admin" -e MINIO_ROOT_PASSWORD="admin123" -e MINIO_NOTIFY_AMQP_ENABLE_PRIMARY="on" -e MINIO_NOTIFY_AMQP_URL_PRIMARY="amqp://admin:admin@rabbitmq:5672" -e MINIO_NOTIFY_AMQP_EXCHANGE_PRIMARY="minio_events" -e MINIO_NOTIFY_AMQP_EXCHANGE_TYPE_PRIMARY="fanout" -e MINIO_NOTIFY_AMQP_ROUTING_KEY_PRIMARY="minio" -e MINIO_BROWSER_REDIRECT_URL="http://localhost:9090" -v C:\minio:/data minio/minio server /data --console-address ":9090"
+```
+ 
+
 
 ## Important
 
