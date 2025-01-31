@@ -1,5 +1,6 @@
 ﻿using Minio;
 using Minio.DataModel.Args;
+using Minio.DataModel.Notification;
 using MinioNotificationToRabbitMqApp.Factory;
 
 namespace MinioNotificationToRabbitMqApp
@@ -10,21 +11,17 @@ namespace MinioNotificationToRabbitMqApp
         {
             try
             {
-                IMinioClient client=ClientFactory.GetClient();
-                var request = new MakeBucketArgs()
-                    .WithBucket("demo");
-                await client.MakeBucketAsync(request);
-                
+                IMinioClient client = ClientFactory.GetClient();
+               
+
+                Console.WriteLine("Уведомления настроены успешно.");
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
+                Console.WriteLine("Произошло исключение:");
+                Console.WriteLine(ex.Message);
+                Console.WriteLine(ex.StackTrace);
             }
-            
-
-
-
-           
         }
     }
 }

@@ -15,7 +15,7 @@ namespace MinioClientApp
         //static string accessKey = "admin";
         //static string secretKey = "admin123";
         static string folder = @"C:\Users\Orkhan\Desktop\TestContainers";
-        static string bucketName = "mydemo";
+        static string bucketName = "demo";
         static string fileName = "test.txt";
         static string downloadedFileName = "server-text.txt";
         static string path = Path.Combine(Directory.GetCurrentDirectory(), fileName);
@@ -77,7 +77,7 @@ namespace MinioClientApp
             try
             {
                 IMinioClient client = ClientFactory.GetClient();
-                await EnableVersionAsync(client,bucketName);
+                await UploadDataToBasketAsync(client);
             
             }
             catch (Exception ex)
