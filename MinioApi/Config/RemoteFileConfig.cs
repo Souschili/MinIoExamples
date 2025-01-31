@@ -7,5 +7,6 @@
         public string Host { get; set; } = string.Empty;
         public string Port { get; set; } = string.Empty;
         public string BucketName { get; set; } = string.Empty;
+        public bool UseSSL { get; set; }
     }
 }
