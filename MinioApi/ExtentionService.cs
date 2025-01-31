@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 using Minio;
 using MinioApi.Config;
-using Microsoft.Extensions.Logging;
 
 namespace MinioApi
 {
