@@ -1,15 +1,21 @@
 ﻿using Microsoft.Extensions.Options;
 using Minio;
 using MinioApi.Config;
+using MinioApi.Services;
+using MinioApi.Services.Contracts;
 
 namespace MinioApi
 {
     public static class ExtensionService
     {
-        public static IServiceCollection RegisterServices(this IServiceCollection services, IConfiguration configuration)
+        public static void RegisterServices(this IServiceCollection services, IConfiguration configuration)
         {
+            // create Minioclient
             AddMinio(services, configuration);
-            return services;
+
+            // Add services to DI container
+            AddServices(services);
+          
         }
 
         public static void AddMinio(IServiceCollection services, IConfiguration configuration)
@@ -29,6 +35,10 @@ namespace MinioApi
                     .WithSSL(config.UseSSL)
                     .Build();
             });
+        }
+        public static void AddServices(IServiceCollection services)
+        {
+            services.AddScoped<IRemoteFileService, RemoteFileService>();
         }
     }
 }

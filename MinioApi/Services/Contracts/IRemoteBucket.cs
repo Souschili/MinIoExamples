@@ -2,6 +2,6 @@
 {
     public interface IRemoteBucket
     {
-        bool IsBucketExist();
+        Task<bool> IsBucketExistAsync();
     }
 }
