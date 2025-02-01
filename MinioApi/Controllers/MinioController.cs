@@ -38,6 +38,21 @@ namespace MinioApi.Controllers
             }
         }
 
+        [HttpPost]
+        public async Task<IActionResult> UploadStreamAsync(IFormFile file)
+        {
+            try
+            {
+                using var sw=file.OpenReadStream();
+                var result = await _fileService.UploadFileAsync(sw, "CV.pdf", objectName);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
         [NonAction]
         private async Task<bool> isBucketAsync()
         {
