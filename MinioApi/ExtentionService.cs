@@ -8,7 +8,7 @@ namespace MinioApi
 {
     public static class ExtensionService
     {
-        public static void RegisterServices(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection RegisterServices(this IServiceCollection services, IConfiguration configuration)
         {
             // create Minioclient
             AddMinio(services, configuration);
@@ -16,6 +16,7 @@ namespace MinioApi
             // Add services to DI container
             AddServices(services);
           
+            return services;
         }
 
         public static void AddMinio(IServiceCollection services, IConfiguration configuration)

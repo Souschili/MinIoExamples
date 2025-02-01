@@ -7,6 +7,11 @@ namespace MinioApi
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            // Добавление стандартного логгера
+            builder.Services.AddLogging();
+            builder.Logging.ClearProviders(); // Убирает все провайдеры логирования по умолчанию
+            builder.Logging.AddConsole(); // Добавление провайдера для консольного вывода
+
             // Add services to the container.
             builder.Services.RegisterServices(builder.Configuration);
 

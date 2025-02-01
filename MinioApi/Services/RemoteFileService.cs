@@ -5,6 +5,7 @@ using Minio.DataModel.Response;
 using Minio.Exceptions;
 using MinioApi.Config;
 using MinioApi.Services.Contracts;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace MinioApi.Services
 {
@@ -12,9 +13,9 @@ namespace MinioApi.Services
     {
         private readonly RemoteFileConfig _config;
         private readonly IMinioClient _client;
-        private readonly ILogger _logger;
+        private readonly ILogger<RemoteFileService> _logger;
 
-        public RemoteFileService(IOptions<RemoteFileConfig> options, IMinioClient client, ILogger logger)
+        public RemoteFileService(IOptions<RemoteFileConfig> options, IMinioClient client, ILogger<RemoteFileService> logger)
         {
             if (options.Value == null)
                 throw new ArgumentNullException(nameof(options.Value), "Config not loaded");
@@ -46,7 +47,8 @@ namespace MinioApi.Services
                 // создаем запрос 
                 PutObjectArgs args = new PutObjectArgs()
                     .WithBucket(_config.BucketName)
-                    .WithContentType(file.ContentType)
+                //.WithContentType(file.ContentType)
+                    .WithContentType("application/pdf")
                     .WithObject(objectPath)
                     .WithStreamData(sw)
                     .WithObjectSize(sw.Length);
@@ -65,6 +67,53 @@ namespace MinioApi.Services
                 _logger.LogError($"Unexpected error: {ex.Message}");
                 throw;  // Пробрасываем исключение дальше
             }
+        }
+
+        public async Task<PutObjectResponse> UploadFileAsync(Stream filestream, string fileName, string objectName, CancellationToken ct= default)
+        {
+            try
+            {
+                // проверяем размер и стрим
+                if( filestream.Length==0) 
+                    throw new FileNotFoundException();
+
+                // проверяем есть ли имя у файла и передан ли обжект нейм
+                if (string.IsNullOrEmpty(fileName) || string.IsNullOrEmpty(objectName))
+                    throw new ArgumentNullException();
+
+                if (!await IsBucketExistAsync(_config.BucketName))
+                {
+                    _logger.LogError($"Bucket {_config.BucketName} does not exist.");
+                    throw new BucketNotFoundException();
+                }
+
+                string objectPath = $"{objectName}/{fileName}";
+                filestream.Position = 0;
+
+                PutObjectArgs args = new PutObjectArgs()
+                    .WithBucket(_config.BucketName)
+                    .WithContentType("application/pdf")
+                    .WithObject(objectPath)
+                    .WithStreamData(filestream)
+                    .WithObjectSize(filestream.Length);
+
+               var responce= await _client.PutObjectAsync(args,ct);
+
+                return responce;
+            }
+            catch (MinioException ex) 
+            {
+
+                _logger.LogError($"MinIO error while uploading file '{fileName}': {ex.Message}");
+                throw;  // Пробрасываем исключение дальше
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Unexpected error: {ex.Message}");
+                throw;  // Пробрасываем исключение дальше
+            }
+           
+        
         }
 
         public async Task<bool> IsBucketExistAsync(string bucketName)
