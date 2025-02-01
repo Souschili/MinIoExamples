@@ -4,6 +4,6 @@ namespace MinioApi.Services.Contracts
 {
     public interface IRemoteFile
     {
-        Task<PutObjectResponse> UploadFileAsync(IFormFile file, CancellationTokenSource ct);
+        Task<PutObjectResponse> UploadFileAsync(IFormFile file,string objectName, CancellationToken ct=default);
     }
 }
