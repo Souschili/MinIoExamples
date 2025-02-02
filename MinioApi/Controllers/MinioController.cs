@@ -63,7 +63,7 @@ namespace MinioApi.Controllers
             try
             {
                 using var sw = file.OpenReadStream();
-                var result = await _fileService.UploadFileAsync(sw, "", objectName);
+                var result = await _fileService.UploadFileAsync(sw, "CV.pdf", objectName);
                 return Ok(result);
             }
             catch (Exception ex)

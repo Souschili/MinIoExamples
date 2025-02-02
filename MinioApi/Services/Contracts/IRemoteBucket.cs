@@ -2,6 +2,6 @@
 {
     public interface IRemoteBucket
     {
-        Task<bool> HasBucketAsync(string bucketName);
+        Task EnsureBucketExistsAsync(string bucketName);
     }
 }

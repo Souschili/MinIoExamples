@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Minio;
 using Minio.ApiEndpoints;
 using Minio.DataModel;
@@ -7,8 +8,6 @@ using Minio.DataModel.Response;
 using Minio.Exceptions;
 using MinioApi.Config;
 using MinioApi.Services.Contracts;
-using System.IO;
-using System.Reactive.Linq;
 
 namespace MinioApi.Services
 {
@@ -35,7 +34,7 @@ namespace MinioApi.Services
                 if (file == null || file.Length == 0)
                     throw new ArgumentNullException(nameof(file), "Unable to upload an empty file");
 
-                await MinioHelper.EnsureBucketExistsAsync(_client, _config.BucketName, _logger);
+                await EnsureBucketExistsAsync( _config.BucketName);
 
                 // читаем поток и используем юзинг, чтобы потом правильно его закрыть
                 using var sw = file.OpenReadStream();
@@ -75,7 +74,7 @@ namespace MinioApi.Services
                 if (filestream == null || filestream.Length == 0)
                     throw new FileNotFoundException("File not found or empty.");
 
-                await MinioHelper.EnsureBucketExistsAsync(_client, _config.BucketName, _logger);
+                await EnsureBucketExistsAsync(_config.BucketName);
 
                 string objectPath = MinioHelper.GenerateObjectPath(objectName, fileName);
                 filestream.Position = 0;
@@ -109,7 +108,7 @@ namespace MinioApi.Services
         {
             try
             {
-                await MinioHelper.EnsureBucketExistsAsync(_client, _config.BucketName, _logger);
+                await EnsureBucketExistsAsync(_config.BucketName);
 
                 var objectPath = MinioHelper.GenerateObjectPath(objectName, fileName);
 
@@ -136,6 +135,8 @@ namespace MinioApi.Services
             MemoryStream memoryStream = new MemoryStream();
             try
             {
+                await EnsureBucketExistsAsync(_config.BucketName);
+
                 var objectPath=MinioHelper.GenerateObjectPath(objectName, fileName);
 
                 var args = new GetObjectArgs()
@@ -161,17 +162,14 @@ namespace MinioApi.Services
                 _logger.LogError(ex, $"Unexpected error while downloading file '{fileName}': {ex.Message}");
                 throw;
             }
-            //finally
-            //{
-            //    memoryStream?.Dispose();
-            //}
-           
         }
    
         public async Task<ObjectStat> GetFileInfoAsync(string fileName, string objectName, CancellationToken ct = default)
         {
             try
             {
+               await EnsureBucketExistsAsync(_config.BucketName);
+
                var objectPath =MinioHelper.GenerateObjectPath(objectName, fileName);
 
                 var statObjectArgs = new StatObjectArgs()
@@ -193,12 +191,13 @@ namespace MinioApi.Services
             }
         }
         
-        public async Task<List<Item>> GetFilesListAsync(string objectNamePrefix, CancellationToken ct = default)
+        public async Task<List<Item>> GetFilesListAsync(string objectName, CancellationToken ct = default)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(objectNamePrefix))
-                    throw new ArgumentException("Object name prefix cannot be empty.");
+                await EnsureBucketExistsAsync(_config.BucketName);
+
+                var objectNamePrefix=MinioHelper.GeneratePrefix(objectName);
 
                 var args = new ListObjectsArgs()
                     .WithBucket(_config.BucketName)
@@ -214,25 +213,25 @@ namespace MinioApi.Services
             }
             catch (MinioException ex)
             {
-                _logger.LogError(ex, $"MinIO error while listing files with prefix '{objectNamePrefix}': {ex.Message}");
+                _logger.LogError(ex, $"MinIO error while listing files with prefix '{objectName}/': {ex.Message}");
                 throw;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Unexpected error while listing files with prefix '{objectNamePrefix}': {ex.Message}");
+                _logger.LogError(ex, $"Unexpected error while listing files with prefix '{objectName}/': {ex.Message}");
                 throw;
             }
         }
         
-        public async Task<bool> HasBucketAsync(string bucketName)
+        public async Task EnsureBucketExistsAsync(string bucketName)
         {
-            BucketExistsArgs arg = new BucketExistsArgs().WithBucket(_config.BucketName);
-            return await _client.BucketExistsAsync(arg);
+            if (!await _client.BucketExistsAsync(new BucketExistsArgs().WithBucket(bucketName)))
+            {
+                _logger.LogError($"Bucket {bucketName} does not exist.");
+                throw new BucketNotFoundException();
+            }
         }
 
-        public Task<bool> HasFileAsync(string objectName, string fileName, CancellationToken ct = default)
-        {
-            throw new NotImplementedException();
-        }
+      
     }
 }
