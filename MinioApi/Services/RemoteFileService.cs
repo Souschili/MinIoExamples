@@ -1,11 +1,14 @@
 ﻿using Microsoft.Extensions.Options;
 using Minio;
+using Minio.ApiEndpoints;
+using Minio.DataModel;
 using Minio.DataModel.Args;
 using Minio.DataModel.Response;
 using Minio.Exceptions;
 using MinioApi.Config;
 using MinioApi.Services.Contracts;
-using static System.Net.Mime.MediaTypeNames;
+using System.IO;
+using System.Reactive.Linq;
 
 namespace MinioApi.Services
 {
@@ -69,59 +72,148 @@ namespace MinioApi.Services
             }
         }
 
-        public async Task<PutObjectResponse> UploadFileAsync(Stream filestream, string fileName, string objectName, CancellationToken ct= default)
+        public async Task<PutObjectResponse> UploadFileAsync(Stream filestream, string fileName, string objectName, CancellationToken ct = default)
         {
             try
             {
-                // проверяем размер и стрим
-                if( filestream.Length==0) 
-                    throw new FileNotFoundException();
+                // Validate file stream, file name, and object name
+                if (filestream == null || filestream.Length == 0)
+                    throw new FileNotFoundException("File not found or empty.");
 
-                // проверяем есть ли имя у файла и передан ли обжект нейм
-                if (string.IsNullOrEmpty(fileName) || string.IsNullOrEmpty(objectName))
-                    throw new ArgumentNullException();
+                if (string.IsNullOrWhiteSpace(fileName) || string.IsNullOrWhiteSpace(objectName))
+                    throw new ArgumentException("File name and object name cannot be empty.");
 
+                // Check if the bucket exists
                 if (!await IsBucketExistAsync(_config.BucketName))
                 {
                     _logger.LogError($"Bucket {_config.BucketName} does not exist.");
-                    throw new BucketNotFoundException();
+                    throw new BucketNotFoundException($"Bucket '{_config.BucketName}' not found.");
                 }
 
                 string objectPath = $"{objectName}/{fileName}";
                 filestream.Position = 0;
 
+                string contentType = MinioHelper.GetContentType(fileName);
+
                 PutObjectArgs args = new PutObjectArgs()
                     .WithBucket(_config.BucketName)
-                    .WithContentType("application/pdf")
+                    .WithContentType(contentType)
                     .WithObject(objectPath)
                     .WithStreamData(filestream)
                     .WithObjectSize(filestream.Length);
 
-               var responce= await _client.PutObjectAsync(args,ct);
+                var response = await _client.PutObjectAsync(args, ct);
 
-                return responce;
+                return response;
             }
-            catch (MinioException ex) 
+            catch (MinioException ex)
             {
-
-                _logger.LogError($"MinIO error while uploading file '{fileName}': {ex.Message}");
-                throw;  // Пробрасываем исключение дальше
+                _logger.LogError(ex, $"MinIO error while uploading file '{fileName}': {ex.Message}");
+                throw;  // Rethrow the exception
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Unexpected error: {ex.Message}");
-                throw;  // Пробрасываем исключение дальше
+                _logger.LogError(ex, $"Unexpected error while uploading file '{fileName}': {ex.Message}");
+                throw;  // Rethrow the exception
             }
-           
-        
         }
 
+        public async Task RemoveFileAsync(string objectName, string fileName, CancellationToken ct = default)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(fileName) || string.IsNullOrWhiteSpace(objectName))
+                    throw new ArgumentException("File name and object name cannot be empty.");
+
+                var arg = new RemoveObjectArgs()
+                                .WithBucket(_config.BucketName)
+                                .WithObject($"{objectName}/{fileName}");
+                await _client.RemoveObjectAsync(arg, ct);
+            }
+            catch (MinioException ex)
+            {
+                _logger.LogError(ex, $"MinIO error while remove file '{fileName}': {ex.Message}");
+                throw;  // Rethrow the exception
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Unexpected error while remove file '{fileName}': {ex.Message}");
+                throw;  // Rethrow the exception
+            }
+        }
+
+        public async Task<Stream> DownloadFileAsync(string objectName, string fileName, CancellationToken ct = default)
+        {
+            MemoryStream memoryStream = new MemoryStream();
+            try
+            {
+                if (string.IsNullOrWhiteSpace(fileName) || string.IsNullOrWhiteSpace(objectName))
+                    throw new ArgumentException("File name and object name cannot be empty.");
+
+                var args = new GetObjectArgs()
+                    .WithBucket(_config.BucketName)
+                    .WithObject($"{objectName}/{fileName}")
+                    .WithCallbackStream(async (stream) =>
+                    {
+                        await stream.CopyToAsync(memoryStream, ct);
+                        memoryStream.Position = 0;
+                    });
+
+                await _client.GetObjectAsync(args, ct);
+
+                return memoryStream;
+            }
+            catch (MinioException ex)
+            {
+                _logger.LogError(ex, $"MinIO error while downloading file '{fileName}': {ex.Message}");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Unexpected error while downloading file '{fileName}': {ex.Message}");
+                throw;
+            }
+            finally
+            {
+                memoryStream?.Dispose();
+            }
+        }
+        public async Task<List<Item>> GetFilesListAsync(string objectNamePrefix, CancellationToken ct = default)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(objectNamePrefix))
+                    throw new ArgumentException("Object name prefix cannot be empty.");
+
+                var args = new ListObjectsArgs()
+                    .WithBucket(_config.BucketName)
+                    .WithPrefix(objectNamePrefix)
+                    .WithRecursive(false);  // true - чтобы пройти по всем подкаталогам, false - только по текущей папке
+
+                List<Item> list = new();
+                await foreach (var item in _client.ListObjectsEnumAsync(args, ct))
+                {
+                    list.Add(item);
+                }
+                return list;
+            }
+            catch (MinioException ex)
+            {
+                _logger.LogError(ex, $"MinIO error while listing files with prefix '{objectNamePrefix}': {ex.Message}");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Unexpected error while listing files with prefix '{objectNamePrefix}': {ex.Message}");
+                throw;
+            }
+        }
         public async Task<bool> IsBucketExistAsync(string bucketName)
         {
             BucketExistsArgs arg = new BucketExistsArgs().WithBucket(_config.BucketName);
             return await _client.BucketExistsAsync(arg);
         }
 
-     
+
     }
 }

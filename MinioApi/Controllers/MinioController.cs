@@ -14,8 +14,8 @@ namespace MinioApi.Controllers
         private readonly string objectName = "vault";
         private readonly IRemoteFileService _fileService;
 
-       
-        public MinioController(IMinioClient client,IRemoteFileService fileService)
+
+        public MinioController(IMinioClient client, IRemoteFileService fileService)
         {
             _client = client;
             _fileService = fileService;
@@ -29,7 +29,7 @@ namespace MinioApi.Controllers
         {
             try
             {
-                var result = await _fileService.UploadFileAsync(file, objectName); 
+                var result = await _fileService.UploadFileAsync(file, objectName);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -43,7 +43,7 @@ namespace MinioApi.Controllers
         {
             try
             {
-                using var sw=file.OpenReadStream();
+                using var sw = file.OpenReadStream();
                 var result = await _fileService.UploadFileAsync(sw, "CV.pdf", objectName);
                 return Ok(result);
             }
@@ -53,6 +53,35 @@ namespace MinioApi.Controllers
             }
         }
 
+        [HttpDelete]
+        public async Task<IActionResult> Remove(string objectName,string fileName)
+        {
+            try
+            {
+                await _fileService.RemoveFileAsync(objectName,fileName);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet("Files")]
+        public async Task<IActionResult> GetFiles()
+        {
+            try
+            {
+                string prefix = "vault/";
+                var list=await _fileService.GetFilesListAsync(prefix);
+                return Ok(list.Select(x=> x.ContentType));
+            }
+            catch(Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+        
         [NonAction]
         private async Task<bool> isBucketAsync()
         {
