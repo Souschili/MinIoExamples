@@ -76,9 +76,9 @@ namespace MinioApi.Services
                 if (filestream == null || filestream.Length == 0)
                     throw new FileNotFoundException("File not found or empty.");
 
-                await MinioHelper.EnsureBucketExistsAsync(_client, _config.BucketName,_logger);
+                await MinioHelper.EnsureBucketExistsAsync(_client, _config.BucketName, _logger);
 
-                string objectPath = MinioHelper.GenerateObjectPath(objectName,fileName);
+                string objectPath = MinioHelper.GenerateObjectPath(objectName, fileName);
                 filestream.Position = 0;
 
                 string contentType = MinioHelper.GetContentType(fileName);
@@ -110,12 +110,14 @@ namespace MinioApi.Services
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(fileName) || string.IsNullOrWhiteSpace(objectName))
-                    throw new ArgumentException("File name and object name cannot be empty.");
+                await MinioHelper.EnsureBucketExistsAsync(_client, _config.BucketName, _logger);
+
+                var objectPath = MinioHelper.GenerateObjectPath(objectName, fileName);
 
                 var arg = new RemoveObjectArgs()
                                 .WithBucket(_config.BucketName)
-                                .WithObject($"{objectName}/{fileName}");
+                                .WithObject(objectPath);
+
                 await _client.RemoveObjectAsync(arg, ct);
             }
             catch (MinioException ex)
@@ -130,10 +132,6 @@ namespace MinioApi.Services
             }
         }
 
-       
-        
-        
-        
         public async Task<Stream> DownloadFileAsync(string objectName, string fileName, CancellationToken ct = default)
         {
             MemoryStream memoryStream = new MemoryStream();
@@ -170,6 +168,8 @@ namespace MinioApi.Services
                 memoryStream?.Dispose();
             }
         }
+
+
 
         public async Task<ObjectStat> GetFileInfoAsync(string fileName, string objectName, CancellationToken ct = default)
         {
