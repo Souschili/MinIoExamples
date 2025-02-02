@@ -1,4 +1,8 @@
-﻿namespace MinioApi
+﻿using Minio.DataModel.Args;
+using Minio.Exceptions;
+using Minio;
+
+namespace MinioApi
 {
     public static class MinioHelper
     {
@@ -87,5 +91,26 @@
 
             return _mimeTypes.TryGetValue(extension, out var mimeType) ? mimeType : "application/octet-stream";
         }
+
+        public static async Task EnsureBucketExistsAsync(IMinioClient client, string bucketName, ILogger logger)
+        {
+            if (!await client.BucketExistsAsync(new BucketExistsArgs().WithBucket(bucketName)))
+            {
+                logger.LogError($"Bucket {bucketName} does not exist.");
+                throw new BucketNotFoundException();
+            }
+        }
+
+        public static string GenerateObjectPath(string objectName, string fileName)
+        {
+            if (string.IsNullOrWhiteSpace(objectName))
+                throw new ArgumentException("Object name cannot be empty", nameof(objectName));
+
+            if (string.IsNullOrWhiteSpace(fileName))
+                throw new ArgumentException("File name cannot be empty", nameof(fileName));
+
+            return $"{objectName.TrimEnd('/')}/{fileName}";
+        }
+
     }
 }

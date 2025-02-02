@@ -36,22 +36,18 @@ namespace MinioApi.Services
                 if (file == null || file.Length == 0)
                     throw new ArgumentNullException(nameof(file), "Unable to upload an empty file");
 
-                if (!await IsBucketExistAsync(_config.BucketName))
-                {
-                    _logger.LogError($"Bucket {_config.BucketName} does not exist.");
-                    throw new BucketNotFoundException();
-                }
+                await MinioHelper.EnsureBucketExistsAsync(_client, _config.BucketName, _logger);
 
                 // читаем поток и используем юзинг, чтобы потом правильно его закрыть
                 using var sw = file.OpenReadStream();
                 sw.Position = 0; // на всякий случай
-                string objectPath = $"{objectName}/{file.FileName}";
+
+                string objectPath = MinioHelper.GenerateObjectPath(objectName, file.FileName);
 
                 // создаем запрос 
                 PutObjectArgs args = new PutObjectArgs()
                     .WithBucket(_config.BucketName)
-                //.WithContentType(file.ContentType)
-                    .WithContentType("application/pdf")
+                    .WithContentType(file.ContentType)
                     .WithObject(objectPath)
                     .WithStreamData(sw)
                     .WithObjectSize(sw.Length);
@@ -80,17 +76,9 @@ namespace MinioApi.Services
                 if (filestream == null || filestream.Length == 0)
                     throw new FileNotFoundException("File not found or empty.");
 
-                if (string.IsNullOrWhiteSpace(fileName) || string.IsNullOrWhiteSpace(objectName))
-                    throw new ArgumentException("File name and object name cannot be empty.");
+                await MinioHelper.EnsureBucketExistsAsync(_client, _config.BucketName,_logger);
 
-                // Check if the bucket exists
-                if (!await IsBucketExistAsync(_config.BucketName))
-                {
-                    _logger.LogError($"Bucket {_config.BucketName} does not exist.");
-                    throw new BucketNotFoundException($"Bucket '{_config.BucketName}' not found.");
-                }
-
-                string objectPath = $"{objectName}/{fileName}";
+                string objectPath = MinioHelper.GenerateObjectPath(objectName,fileName);
                 filestream.Position = 0;
 
                 string contentType = MinioHelper.GetContentType(fileName);
@@ -142,6 +130,10 @@ namespace MinioApi.Services
             }
         }
 
+       
+        
+        
+        
         public async Task<Stream> DownloadFileAsync(string objectName, string fileName, CancellationToken ct = default)
         {
             MemoryStream memoryStream = new MemoryStream();
@@ -178,6 +170,32 @@ namespace MinioApi.Services
                 memoryStream?.Dispose();
             }
         }
+
+        public async Task<ObjectStat> GetFileInfoAsync(string fileName, string objectName, CancellationToken ct = default)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(fileName) || string.IsNullOrWhiteSpace(objectName))
+                    throw new ArgumentException("File name and object name cannot be empty.");
+
+                var statObjectArgs = new StatObjectArgs()
+                    .WithBucket(_config.BucketName)
+                    .WithObject(objectName);
+
+                var fileInfo = await _client.StatObjectAsync(statObjectArgs, ct);
+                return fileInfo;
+            }
+            catch (MinioException ex)
+            {
+                //_logger.LogError(ex, $"MinIO error while listing files with prefix '{objectNamePrefix}': {ex.Message}");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                //_logger.LogError(ex, $"Unexpected error while listing files with prefix '{objectNamePrefix}': {ex.Message}");
+                throw;
+            }
+        }
         public async Task<List<Item>> GetFilesListAsync(string objectNamePrefix, CancellationToken ct = default)
         {
             try
@@ -208,12 +226,15 @@ namespace MinioApi.Services
                 throw;
             }
         }
-        public async Task<bool> IsBucketExistAsync(string bucketName)
+        public async Task<bool> HasBucketAsync(string bucketName)
         {
             BucketExistsArgs arg = new BucketExistsArgs().WithBucket(_config.BucketName);
             return await _client.BucketExistsAsync(arg);
         }
 
-
+        public Task<bool> HasFileAsync(string objectName, string fileName, CancellationToken ct = default)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

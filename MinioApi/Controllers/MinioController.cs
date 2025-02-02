@@ -24,19 +24,19 @@ namespace MinioApi.Controllers
         [HttpGet]
         public string Get() => "Test";
 
-        [HttpPost("Upload")]
-        public async Task<IActionResult> UploadAsync(IFormFile file)
-        {
-            try
-            {
-                var result = await _fileService.UploadFileAsync(file, objectName);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
-        }
+        //[HttpPost("Upload")]
+        //public async Task<IActionResult> UploadAsync(IFormFile file)
+        //{
+        //    try
+        //    {
+        //        var result = await _fileService.UploadFileAsync(file, objectName);
+        //        return Ok(result);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return BadRequest(ex.Message);
+        //    }
+        //}
 
         [HttpPost]
         public async Task<IActionResult> UploadStreamAsync(IFormFile file)
@@ -44,7 +44,7 @@ namespace MinioApi.Controllers
             try
             {
                 using var sw = file.OpenReadStream();
-                var result = await _fileService.UploadFileAsync(sw, "CV.pdf", objectName);
+                var result = await _fileService.UploadFileAsync(sw, "", objectName);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -74,7 +74,7 @@ namespace MinioApi.Controllers
             {
                 string prefix = "vault/";
                 var list=await _fileService.GetFilesListAsync(prefix);
-                return Ok(list.Select(x=> x.ContentType));
+                return Ok(list);
             }
             catch(Exception ex)
             {
