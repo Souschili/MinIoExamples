@@ -11,5 +11,6 @@ namespace MinioApi.Services.Contracts
         Task<Stream> DownloadFileAsync(string objectName, string fileName, CancellationToken ct = default);
         Task<List<Item>> GetFilesListAsync(string objectNamePrefix, CancellationToken ct = default);
         Task<bool> HasFileAsync(string objectName, string fileName, CancellationToken ct = default);
+        Task<ObjectStat> GetFileInfoAsync(string fileName, string objectName, CancellationToken ct = default);
     }
 }

@@ -21,22 +21,41 @@ namespace MinioApi.Controllers
             _fileService = fileService;
         }
 
-        [HttpGet]
-        public string Get() => "Test";
+        [HttpGet("Download")]
+        public async Task<IActionResult> Download()
+        {
+            try
+            {
+                
+                var file= await _fileService.DownloadFileAsync("vault", "CV.pdf");
+                var path = Path.Combine("C:/Test", "CV.pdf");
+                // Открытие файла на запись
+                using (var fileStream = new FileStream(path, FileMode.Create, FileAccess.Write))
+                {
+                    // Копируем данные из memoryStream в файл
+                    await file.CopyToAsync(fileStream);
+                }
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
 
-        //[HttpPost("Upload")]
-        //public async Task<IActionResult> UploadAsync(IFormFile file)
-        //{
-        //    try
-        //    {
-        //        var result = await _fileService.UploadFileAsync(file, objectName);
-        //        return Ok(result);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return BadRequest(ex.Message);
-        //    }
-        //}
+        [HttpPost("Upload")]
+        public async Task<IActionResult> UploadAsync(IFormFile file)
+        {
+            try
+            {
+                var result = await _fileService.UploadFileAsync(file, objectName);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
 
         [HttpPost]
         public async Task<IActionResult> UploadStreamAsync(IFormFile file)
@@ -81,7 +100,22 @@ namespace MinioApi.Controllers
                 return BadRequest(ex.Message);
             }
         }
-        
+
+        [HttpGet("Info")]
+        public async Task<IActionResult> GetInfo()
+        {
+            try
+            {
+                var info = await _fileService.GetFileInfoAsync("CV.pdf", "vault");
+                return Ok(info);
+            }
+            catch (Exception ex)
+            {
+
+                return BadRequest(ex.Message);
+            }
+        }
+
         [NonAction]
         private async Task<bool> isBucketAsync()
         {

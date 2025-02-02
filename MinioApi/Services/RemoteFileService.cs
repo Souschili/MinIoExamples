@@ -20,10 +20,9 @@ namespace MinioApi.Services
 
         public RemoteFileService(IOptions<RemoteFileConfig> options, IMinioClient client, ILogger<RemoteFileService> logger)
         {
-            if (options.Value == null)
-                throw new ArgumentNullException(nameof(options.Value), "Config not loaded");
-            if (client == null)
-                throw new ArgumentNullException(nameof(client), "Client not initialized");
+            _config = options?.Value ?? throw new ArgumentNullException(nameof(options.Value), "Config not loaded");
+            _client = client ?? throw new ArgumentNullException(nameof(client), "Client not initialized");
+
             _config = options.Value;
             _client = client;
             _logger = logger;
@@ -72,7 +71,7 @@ namespace MinioApi.Services
         {
             try
             {
-                // Validate file stream, file name, and object name
+                // Validate file stream
                 if (filestream == null || filestream.Length == 0)
                     throw new FileNotFoundException("File not found or empty.");
 
@@ -137,13 +136,12 @@ namespace MinioApi.Services
             MemoryStream memoryStream = new MemoryStream();
             try
             {
-                if (string.IsNullOrWhiteSpace(fileName) || string.IsNullOrWhiteSpace(objectName))
-                    throw new ArgumentException("File name and object name cannot be empty.");
+                var objectPath=MinioHelper.GenerateObjectPath(objectName, fileName);
 
                 var args = new GetObjectArgs()
                     .WithBucket(_config.BucketName)
-                    .WithObject($"{objectName}/{fileName}")
-                    .WithCallbackStream(async (stream) =>
+                    .WithObject(objectPath)
+                    .WithCallbackStream(async (stream,ct) =>
                     {
                         await stream.CopyToAsync(memoryStream, ct);
                         memoryStream.Position = 0;
@@ -163,24 +161,22 @@ namespace MinioApi.Services
                 _logger.LogError(ex, $"Unexpected error while downloading file '{fileName}': {ex.Message}");
                 throw;
             }
-            finally
-            {
-                memoryStream?.Dispose();
-            }
+            //finally
+            //{
+            //    memoryStream?.Dispose();
+            //}
+           
         }
-
-
-
+   
         public async Task<ObjectStat> GetFileInfoAsync(string fileName, string objectName, CancellationToken ct = default)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(fileName) || string.IsNullOrWhiteSpace(objectName))
-                    throw new ArgumentException("File name and object name cannot be empty.");
+               var objectPath =MinioHelper.GenerateObjectPath(objectName, fileName);
 
                 var statObjectArgs = new StatObjectArgs()
                     .WithBucket(_config.BucketName)
-                    .WithObject(objectName);
+                    .WithObject(objectPath);
 
                 var fileInfo = await _client.StatObjectAsync(statObjectArgs, ct);
                 return fileInfo;
@@ -196,6 +192,7 @@ namespace MinioApi.Services
                 throw;
             }
         }
+        
         public async Task<List<Item>> GetFilesListAsync(string objectNamePrefix, CancellationToken ct = default)
         {
             try
@@ -226,6 +223,7 @@ namespace MinioApi.Services
                 throw;
             }
         }
+        
         public async Task<bool> HasBucketAsync(string bucketName)
         {
             BucketExistsArgs arg = new BucketExistsArgs().WithBucket(_config.BucketName);
