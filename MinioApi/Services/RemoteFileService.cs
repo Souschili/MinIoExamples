@@ -50,7 +50,7 @@ namespace MinioApi.Services
                     .WithStreamData(sw)
                     .WithObjectSize(sw.Length);
 
-                var response = await _client.PutObjectAsync(args, ct);
+                PutObjectResponse response = await _client.PutObjectAsync(args, ct);
 
                 return response;
             }
