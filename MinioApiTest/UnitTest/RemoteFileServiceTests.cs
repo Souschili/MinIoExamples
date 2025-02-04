@@ -107,5 +107,10 @@ namespace MinioApiTest.UnitTest
             Assert.NotNull(result);
         }
 
+        [Fact]
+        public async Task UploadFileAsync_Showld_ThrowException()
+        {
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _fileService.UploadFileAsync(default!, "ggg"));
+        }
     }
 }

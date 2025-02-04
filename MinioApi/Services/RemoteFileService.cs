@@ -31,6 +31,8 @@ namespace MinioApi.Services
         {
             try
             {
+                ArgumentNullException.ThrowIfNull(file,"This param required");
+                
                 if (file == null || file.Length == 0)
                     throw new ArgumentNullException(nameof(file), "Unable to upload an empty file");
 
