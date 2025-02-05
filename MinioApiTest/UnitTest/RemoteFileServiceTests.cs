@@ -116,48 +116,43 @@ namespace MinioApiTest.UnitTest
         }
 
         [Fact]
-
         public async Task DownloadFile_ShouldReturnStream_IfRequestSuccess()
         {
             // Arrange
-            var mockObjectStat = new Mock<ObjectStat>();
             var fileName = "test.txt";
             var objectName = "demo_bucket";
             var content = Encoding.UTF8.GetBytes("privet chuvaki");
+
             using var callstream = new MemoryStream();
-            
-            using var ms = new MemoryStream();
-            ms.Write(content, 0, content.Length);
+            using var ms = new MemoryStream(content);
             ms.Position = 0;
+
             var objectPath = MinioHelper.GenerateObjectPath("demo", objectName);
 
-            var args = new GetObjectArgs()
-                .WithBucket("fake-bucket")
-                .WithObject(objectPath);
-
             _mockMinioClient.Setup(client => client.BucketExistsAsync(It.IsAny<BucketExistsArgs>(), It.IsAny<CancellationToken>()))
-                           .ReturnsAsync(true);
+                            .ReturnsAsync(true);
 
             _mockMinioClient
-             .Setup(s => s.GetObjectAsync(It.IsAny<GetObjectArgs>(), It.IsAny<CancellationToken>()))
-             .Returns(async (GetObjectArgs args, CancellationToken token) =>
-             {
-                 using var contentStream = new MemoryStream(content);
-                 await contentStream.CopyToAsync(callstream);
-                 callstream.Position = 0; // Устанавливаем в начало
-                 return ObjectStat.FromResponseHeaders(fileName, new Dictionary<string, string>
-                 {
-                     { "Content-Type", "text/plain" }
-                 });
-             });
+                .Setup(s => s.GetObjectAsync(It.IsAny<GetObjectArgs>(), It.IsAny<CancellationToken>()))
+                .Returns(async (GetObjectArgs args, CancellationToken token) =>
+                {
+                    using var contentStream = new MemoryStream(content);
+                    await contentStream.CopyToAsync(callstream);
+                    callstream.Position = 0; // Устанавливаем позицию потока в начало
+                    return ObjectStat.FromResponseHeaders(fileName, new Dictionary<string, string>
+                    {
+                         { "Content-Type", "text/plain" }
+                    });
+                });
 
-            var result=await _fileService.DownloadFileAsync(objectName, fileName);
+            // Act
+            var result = await _fileService.DownloadFileAsync(objectName, fileName);
 
-
-
+            // Assert
             Assert.NotNull(result);
-           
             Assert.Equal(ms.ToArray(), callstream.ToArray());
         }
+
+
     }
 }
