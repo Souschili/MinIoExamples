@@ -78,16 +78,26 @@ namespace MinioClientApp
             {
                 IMinioClient client = ClientFactory.GetClient();
                 var content = Encoding.UTF8.GetBytes("Privet s bolshogo boduna");
-                var path = Path.Combine("folder", "text.txt").Replace('\\','/');
+                var path = Path.Combine("folder", "рыломорда.txt").Replace('\\','/'); // такой путь создает виртуальную папку
                 using Stream stream=new MemoryStream(content);
+                //using Stream st=new MemoryStream();
                 PutObjectArgs pArg = new PutObjectArgs()
                     .WithBucket(bucketName)
                     .WithContentType("text/plain")
                     .WithObject(path)
                     .WithObjectSize(content.Length)
                     .WithStreamData(stream);
-                var put=await client.PutObjectAsync(pArg);
+                var put = await client.PutObjectAsync(pArg);
                 Console.WriteLine(put.ResponseStatusCode);
+                //GetObjectArgs arg = new GetObjectArgs()
+                //    .WithBucket(bucketName)
+                //    .WithObject(path)
+                //    .WithCallbackStream((stream)=> stream.CopyTo(st));
+                //var res=await client.GetObjectAsync(arg);
+                //st.Position= 0;
+                //using StreamReader str = new StreamReader(st);
+                //var buff=str.ReadToEnd();
+                //Console.WriteLine(buff);
             }
             catch (Exception ex)
             {
