@@ -77,8 +77,17 @@ namespace MinioClientApp
             try
             {
                 IMinioClient client = ClientFactory.GetClient();
-                await UploadDataToBasketAsync(client);
-            
+                var content = Encoding.UTF8.GetBytes("Privet s bolshogo boduna");
+                var path = Path.Combine("folder", "text.txt").Replace('\\','/');
+                using Stream stream=new MemoryStream(content);
+                PutObjectArgs pArg = new PutObjectArgs()
+                    .WithBucket(bucketName)
+                    .WithContentType("text/plain")
+                    .WithObject(path)
+                    .WithObjectSize(content.Length)
+                    .WithStreamData(stream);
+                var put=await client.PutObjectAsync(pArg);
+                Console.WriteLine(put.ResponseStatusCode);
             }
             catch (Exception ex)
             {
